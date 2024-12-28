@@ -51,7 +51,7 @@ func New(handler http.Handler, options ...Option) Server {
 // Starts server in seperate goroutine.
 func (s *Server) Start() {
 	go func() {
-		log.Printf("Server started on %s", s.GetAdrr())
+		log.Printf("Server started on %s", s.GetAddr())
 		if err := s.httpServer.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 			s.notifier <- err
 		}
@@ -72,6 +72,6 @@ func (s *Server) Shutdown() error {
 }
 
 // Returns the address of the server.
-func (s *Server) GetAdrr() string {
+func (s *Server) GetAddr() string {
 	return s.httpServer.Addr
 }
