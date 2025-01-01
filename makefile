@@ -1,13 +1,7 @@
-include ./.env
+include .env
+export
 
 MIGRATIONS_PATH=./migrations
-INIT_WAY=init
-WAY_UP=up
-WAY_DOWN=down
-
-.PHONY: init-vars
-init-vars:
-	./scripts/env.sh  
 
 .PHONY:postgres-up
 postgres-up:
@@ -23,25 +17,49 @@ postgres-up:
 postgres-down:
 	docker stop ${POSTGRES_DB} && docker rm ${POSTGRES_DB};
 
-.PHONY: migrate-init
-migrate-init:
-	@make init-vars && ./scripts/migrations.sh ${MIGRATIONS_PATH} ${INIT_WAY}
+.PHONY:redis-up
+redis-up:
+	docker run --name=${REDIS_CONTAINER_NAME} \
+	-e REDIS_USER=${REDIS_USER} \
+	-e REDIS_USER_PASSWORD=${REDIS_USER_PASSWORD} \
+	-p=${REDIS_PORT}:${REDIS_PORT} \
+	-d redis
+
+.PHONY:redis-down
+redis-down:
+	docker stop ${REDIS_CONTAINER_NAME} && docker rm ${REDIS_CONTAINER_NAME};
 
 .PHONY: migrate-up
 migrate-up:
-	@make init-vars && ./scripts/migrations.sh ${MIGRATIONS_PATH} ${WAY_UP}
+	echo "Migrating up..."
+	migrate -path ${MIGRATIONS_PATH} -database 'postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=${POSTGRES_SSL_MODE}' -verbose up
+
 
 .PHONY: migrate-down
 migrate-down:
-	@make init-vars && ./scripts/migrations.sh ${MIGRATIONS_PATH} ${WAY_DOWN}
+	echo "Migrating down..."
+	migrate -path ${MIGRATIONS_PATH} -database 'postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=${POSTGRES_SSL_MODE}' -verbose down
+
+.PHONY: infrastructure-stop
+infrastructure-stop:
+	@make postgres-down \
+	&& make redis-down
+
+.PHONY: infrastructure-up
+infrastructure-up:
+	@make postgres-up \
+	&& make redis-up
 
 .PHONY: help
 help:
 	@echo "												"
 	@echo "	available commands:							"
 	@echo "												"
+	@echo "	infrastructure-up	->		start all databases"
+	@echo "	infrastructure-down	->		remove all databases"
 	@echo "	postgres-up	->		creates postgres db docker container"
 	@echo "	postgres-down	->		stops and removes postgres db docker container"
-	@echo "	migrate-init	->		creates a new init blank files"
+	@echo "	redis-up	->		creates redis db docker container"
+	@echo "	redis-down	->		stops and removes redis db docker container"
 	@echo "	migrate-up	->		applies up migrations to db"
 	@echo "	migrate-down	->		applies down migrations to db"
