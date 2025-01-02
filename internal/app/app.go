@@ -25,6 +25,7 @@ func Run() {
 		log.Printf("env config initialization err: %s", err)
 		return
 	}
+	log.Print("Configuration variables was initialized successfully")
 
 	postgresDB, err := db.NewPostgresDB(cnf.Postgres.Host,
 		cnf.Postgres.Port,
@@ -37,6 +38,7 @@ func Run() {
 		log.Printf("postgres db initialization err: %s", err)
 		return
 	}
+	log.Print("Postgres DB was initialized successfully")
 
 	redisDB, err := db.NewRedisDB(context.Background(),
 		cnf.Redis.Host,
@@ -48,21 +50,30 @@ func Run() {
 		log.Printf("redis db initialization err: %s", err)
 		return
 	}
+	log.Print("Redis DB was initialized successfully")
 
 	userRepo := repoPostgres.NewUserRepo(postgresDB)
+	log.Print("User repository was initialized successfully")
 	tokenRepo := repoRedis.NewTokenRepo(redisDB)
+	log.Print("Token repository was initialized successfully")
 
 	authService := serviceAuth.NewAuthService(&tokenRepo, &userRepo)
+	log.Print("Authentication service was initialized successfully")
 
 	userHandlers := handler.NewUserHandlers(&authService)
+	log.Print("User handlers was initialized successfully")
 
 	router := handler.Handlers{
 		UserHandlers: userHandlers,
 	}
+	log.Print("Router struct was initialized successfully")
 
 	handlers := router.InitRoutes(cnf)
+	log.Print("Router was initialized successfully")
 
-	httpServer := server.New(handlers)
+	httpServer := server.New(handlers,
+		server.AddAddress(cnf.Server.Host, cnf.Server.Port))
+	log.Print("Server was initialized successfully")
 	httpServer.Start()
 
 	appCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGKILL, os.Interrupt)
