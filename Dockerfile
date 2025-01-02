@@ -12,6 +12,8 @@ WORKDIR /build
 COPY . .
 
 # Build app
+RUN go mod download
+RUN go mod tidy
 RUN go build -o bin/SensorsApp cmd/sensors-app/main.go
 
 # Run stage

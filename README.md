@@ -10,7 +10,7 @@
 
 ### Manual Start
 
-For this case you need to make sure ```Go 1.22+```, ```make``` and ```migrate``` to be installed locally.
+For this case you need to make sure ```Go 1.22+```, ```make``` and ```migrate``` are installed locally.
 
 1. Make yourself familiar with available makefile commands. Run ```make help``` to see commands.
 2. Use ```make infrastructure-up``` to start all dependencies.
