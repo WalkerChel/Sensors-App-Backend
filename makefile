@@ -56,7 +56,7 @@ help:
 	@echo "	available commands:							"
 	@echo "												"
 	@echo "	infrastructure-up	->		start all databases"
-	@echo "	infrastructure-down	->		remove all databases"
+	@echo "	infrastructure-stop	->		remove all databases"
 	@echo "	postgres-up	->		creates postgres db docker container"
 	@echo "	postgres-down	->		stops and removes postgres db docker container"
 	@echo "	redis-up	->		creates redis db docker container"
