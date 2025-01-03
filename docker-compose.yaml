@@ -21,7 +21,7 @@ services:
   postgres_db:
     container_name: ${POSTGRES_DB}
     restart: always
-    image: postgres:latest
+    image: postgres:17.2
     networks:
       - app-network
     volumes:
@@ -43,7 +43,7 @@ services:
   
   redis_db:
     container_name: ${REDIS_CONTAINER_NAME}
-    image: redis:latest
+    image: redis:7.4.1
     env_file:
       - .env
     environment:
