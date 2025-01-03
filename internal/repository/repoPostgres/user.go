@@ -2,6 +2,7 @@ package repoPostgres
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"sensors-app/internal/entities"
@@ -60,4 +61,24 @@ func (r *UserRepo) DeleteUser(cxt context.Context, userId int64) error {
 	}
 
 	return err
+}
+
+func (r *UserRepo) GetUserByEmailAndPassword(cxt context.Context, email, password string) (int64, error) {
+	var id int64
+
+	query := fmt.Sprintf(`
+	SELECT id FROM %s AS u
+	WHERE u.email = $1 AND u.password_hash = $2`,
+		userTable)
+
+	row := r.db.QueryRowContext(cxt, query, email, password)
+
+	if err := row.Scan(&id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, repoErrors.ErrNoUser
+		}
+		return 0, err
+	}
+
+	return id, nil
 }

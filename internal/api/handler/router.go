@@ -16,7 +16,8 @@ func (r *Handlers) InitRoutes(env entities.Config) http.Handler {
 
 	auth := router.Group("/auth")
 	{
-		auth.POST("/sign-up", r.UserHandlers.CreateUserHandler(env))
+		auth.POST("/sign-up", r.UserHandlers.CreateUserHandler())
+		auth.POST(("/sign-in"), r.UserHandlers.UserAuthenticationHandler(env))
 	}
 
 	return router
