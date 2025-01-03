@@ -11,6 +11,7 @@
 
 # Local database files
 .db
+.database
 .db.bak
 
 # Local backup files
