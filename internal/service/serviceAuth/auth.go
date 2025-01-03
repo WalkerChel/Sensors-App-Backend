@@ -3,6 +3,7 @@ package serviceAuth
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"sensors-app/internal/entities"
 	"sensors-app/internal/repository/repoErrors"
@@ -25,6 +26,7 @@ type TokenRepo interface {
 type UserRepo interface {
 	CreateUser(cxt context.Context, user entities.User) (int64, error)
 	DeleteUser(cxt context.Context, userId int64) error
+	GetUserByEmailAndPassword(cxt context.Context, email, password string) (int64, error)
 }
 
 type AuthService struct {
@@ -51,6 +53,20 @@ func (s *AuthService) CreateUser(cxt context.Context, user entities.User) (int64
 	}
 
 	return id, nil
+}
+
+func (s *AuthService) GetUserByEmailAndPassword(cxt context.Context, email, password string) (int64, error) {
+	passwordHash := utils.GeneratePasswordHash(password, salt)
+
+	userId, err := s.userRepo.GetUserByEmailAndPassword(cxt, email, passwordHash)
+	if err != nil {
+		if errors.Is(err, repoErrors.ErrNoUser) {
+			return 0, fmt.Errorf("%w: email: %s", serviceErrors.ErrNoUserInfo, email)
+		}
+		return 0, err
+	}
+
+	return userId, nil
 }
 
 func (s *AuthService) DeleteUser(cxt context.Context, userId int64) error {

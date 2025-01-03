@@ -11,7 +11,7 @@ postgres-up:
 	-e POSTGRES_PASSWORD=${POSTGRES_PASSWORD} \
 	-e POSTGRES_SSL_MODE=${POSTGRES_SSL_MODE} \
 	-p=${POSTGRES_PORT}:${POSTGRES_PORT} \
-	-d postgres
+	-d postgres:17.2
 
 .PHONY:postgres-down
 postgres-down:
@@ -23,7 +23,7 @@ redis-up:
 	-e REDIS_USER=${REDIS_USER} \
 	-e REDIS_USER_PASSWORD=${REDIS_USER_PASSWORD} \
 	-p=${REDIS_PORT}:${REDIS_PORT} \
-	-d redis
+	-d redis:7.4.1
 
 .PHONY:redis-down
 redis-down:
