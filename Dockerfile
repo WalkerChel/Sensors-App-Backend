@@ -47,4 +47,6 @@ RUN curl -LO https://github.com/golang-migrate/migrate/releases/download/${GOLAN
 
 EXPOSE 8080 
 
-ENTRYPOINT ["/build/entrypoint.sh"]
+RUN chmod +x ./entrypoint.sh
+
+ENTRYPOINT ["sh", "/build/entrypoint.sh"]
