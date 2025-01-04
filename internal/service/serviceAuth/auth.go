@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"sensors-app/internal/entities"
+	"sensors-app/internal/repository/repoErrors"
+	"sensors-app/internal/service/serviceErrors"
 
 	"time"
 
@@ -15,7 +17,7 @@ import (
 type TokenRepo interface {
 	StoreToken(cxt context.Context, userId int64, token string, tokenTTL time.Duration) error
 	DeleteToken(cxt context.Context, userId int64) error
-	TokenExists(cxt context.Context, userId int64) (bool, error)
+	GetTokenByUserID(cxt context.Context, userId int64) (string, error)
 }
 
 type AuthService struct {
@@ -30,10 +32,10 @@ func NewAuthService(tokenRepo TokenRepo) AuthService {
 
 type tokenClaims struct {
 	jwt.StandardClaims
-	userId int64
+	UserId int64
 }
 
-func ParseToken(token string, cnf entities.JWT) (int64, error) {
+func (s *AuthService) ParseToken(token string, cnf entities.JWT) (int64, error) {
 	parsedToken, err := jwt.ParseWithClaims(token, &tokenClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("invalid signing method")
@@ -42,6 +44,10 @@ func ParseToken(token string, cnf entities.JWT) (int64, error) {
 	})
 
 	if err != nil {
+		var jwtErr *jwt.ValidationError
+		if errors.As(err, &jwtErr) {
+			return 0, fmt.Errorf("%w: %w", serviceErrors.ErrParseToken, jwtErr)
+		}
 		return 0, err
 	}
 	claims, ok := parsedToken.Claims.(*tokenClaims)
@@ -49,7 +55,7 @@ func ParseToken(token string, cnf entities.JWT) (int64, error) {
 		return 0, errors.New("token claims are not of type *tokenClaims")
 	}
 
-	return claims.userId, nil
+	return claims.UserId, nil
 }
 
 func (s *AuthService) CreateToken(cxt context.Context, userId int64, cnf entities.JWT) (string, error) {
@@ -78,10 +84,43 @@ func generateToken(userId int64, cnf entities.JWT) (string, error) {
 	return token.SignedString([]byte(cnf.SignatureKey))
 }
 
-func (s *AuthService) DeleteToken(cxt context.Context, userId int64, token string) error {
-	return s.tokenRepo.DeleteToken(cxt, userId)
+func (s *AuthService) DeleteToken(cxt context.Context, userId int64) error {
+	if err := s.tokenRepo.DeleteToken(cxt, userId); err != nil {
+		if errors.Is(err, repoErrors.ErrNoToken) {
+			return serviceErrors.ErrTokenAlreadyRemoved
+		}
+		return err
+	}
+
+	return nil
 }
 
-func (s *AuthService) CheckToken(cxt context.Context, userId int64) (bool, error) {
-	return s.tokenRepo.TokenExists(cxt, userId)
+func (s *AuthService) CheckToken(cxt context.Context, userId int64, token string) (bool, error) {
+	tokenRepo, err := s.tokenRepo.GetTokenByUserID(cxt, userId)
+	if err != nil {
+		if errors.Is(err, repoErrors.ErrNoToken) {
+			return false, serviceErrors.ErrNoTokenForCheck
+		}
+		return false, err
+	}
+
+	if token != tokenRepo {
+		return false, nil
+	}
+	return true, nil
+}
+
+func (s *AuthService) GetUserIDFromCtx(ctx context.Context, key string) (int64, error) {
+	id := ctx.Value(key)
+
+	if id == nil {
+		return 0, serviceErrors.ErrNoUserIDInCtx
+	}
+
+	IdInt64, ok := id.(int64)
+	if !ok {
+		return 0, serviceErrors.ErrUserIDNotInt64Type
+	}
+	return IdInt64, nil
+
 }

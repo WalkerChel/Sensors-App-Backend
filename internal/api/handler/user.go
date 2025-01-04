@@ -14,6 +14,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const (
+	userIDCtxKey = "userID"
+)
+
 type UserService interface {
 	CreateUser(cxt context.Context, user entities.User) (int64, error)
 	GetUserIDByEmailAndPassword(cxt context.Context, email, password string) (int64, error)
@@ -94,6 +98,41 @@ func (h *UserHandlers) UserAuthenticationHandler(env entities.Config, authServic
 		log.Printf("UserHandlers UserAuthenticationHandler Created token for userID: %d", userID)
 		c.JSON(http.StatusOK, gin.H{
 			"token": token,
+		})
+
+	}
+}
+
+func (h *UserHandlers) UserLogOutHandler(authService ports.Authentication) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userID, err := authService.GetUserIDFromCtx(c, userIDCtxKey)
+		if err != nil {
+			log.Printf("UserHandlers UserLogOutHandler err: %s", err)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+				"message": "something went wrong when extracting userID from request's context",
+			})
+			return
+		}
+
+		if err := authService.DeleteToken(c, userID); err != nil {
+			if errors.Is(err, serviceErrors.ErrTokenAlreadyRemoved) {
+				log.Printf("UserHandlers UserLogOutHandler err: %s", err)
+				c.JSON(http.StatusAccepted, gin.H{
+					"message": "user already logged out",
+				})
+				return
+			}
+			log.Printf("UserHandlers UserLogOutHandler err: %s", err)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+				"message": "something went wrong when deleting user's token",
+			})
+			return
+		}
+
+		log.Printf("User has successfully logged out: userID: %d", userID)
+
+		c.JSON(http.StatusAccepted, gin.H{
+			"message": "successfully logged out",
 		})
 
 	}

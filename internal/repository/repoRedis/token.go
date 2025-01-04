@@ -2,8 +2,10 @@ package repoRedis
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
+	"sensors-app/internal/repository/repoErrors"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -27,6 +29,8 @@ func (r *TokenRepo) StoreToken(cxt context.Context, userId int64, token string, 
 		return err
 	}
 
+	log.Printf("Stored key: '%s' in redis db", key)
+
 	return nil
 }
 
@@ -34,6 +38,10 @@ func (r *TokenRepo) DeleteToken(cxt context.Context, userId int64) error {
 	key := fmt.Sprintf("userId:%d:token", userId)
 
 	if err := r.db.Del(cxt, key).Err(); err != nil {
+		if errors.Is(err, redis.Nil) {
+			log.Printf("RedisRepo DeleteToken err: %s", err)
+			return repoErrors.ErrNoToken
+		}
 		log.Printf("RedisRepo DeleteToken err: %s", err)
 		return err
 	}
@@ -41,16 +49,21 @@ func (r *TokenRepo) DeleteToken(cxt context.Context, userId int64) error {
 	return nil
 }
 
-func (r *TokenRepo) TokenExists(cxt context.Context, userId int64) (bool, error) {
+func (r *TokenRepo) GetTokenByUserID(cxt context.Context, userId int64) (string, error) {
 	key := fmt.Sprintf("userId:%d:token", userId)
 
-	_, err := r.db.Get(cxt, key).Result()
+	token, err := r.db.Get(cxt, key).Result()
 
-	if err == redis.Nil {
-		return false, nil
-	} else if err != nil {
-		return false, fmt.Errorf("failed to get value, error: %w", err)
+	log.Printf("REDIS Getting key: %s", key)
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			log.Printf("RedisRepo TokenExists err: %s", err)
+			return "", repoErrors.ErrNoToken
+		}
+		log.Printf("RedisRepo TokenExists err: %s", err)
+		return "", fmt.Errorf("failed to get value, error: %w", err)
+
 	}
 
-	return true, nil
+	return token, nil
 }
