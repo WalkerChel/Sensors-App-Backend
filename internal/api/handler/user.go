@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sensors-app/internal/api"
 	apiRequests "sensors-app/internal/api/api-requests"
+	"sensors-app/internal/api/ports"
 	"sensors-app/internal/entities"
 	"sensors-app/internal/service/serviceErrors"
 
@@ -14,11 +15,8 @@ import (
 )
 
 type UserService interface {
-	CheckToken(cxt context.Context, userId int64) (bool, error)
-	CreateToken(cxt context.Context, userId int64, cnf entities.JWT) (string, error)
 	CreateUser(cxt context.Context, user entities.User) (int64, error)
-	GetUserByEmailAndPassword(cxt context.Context, email, password string) (int64, error)
-	DeleteToken(cxt context.Context, userId int64, token string) error
+	GetUserIDByEmailAndPassword(cxt context.Context, email, password string) (int64, error)
 	DeleteUser(cxt context.Context, userId int64) error
 }
 
@@ -63,7 +61,7 @@ func (h *UserHandlers) CreateUserHandler() gin.HandlerFunc {
 	}
 }
 
-func (h *UserHandlers) UserAuthenticationHandler(env entities.Config) gin.HandlerFunc {
+func (h *UserHandlers) UserAuthenticationHandler(env entities.Config, authService ports.Authentication) gin.HandlerFunc {
 	jwtCnf := env.JWT
 	return func(c *gin.Context) {
 		var userInput apiRequests.UserAuthentication
@@ -74,7 +72,7 @@ func (h *UserHandlers) UserAuthenticationHandler(env entities.Config) gin.Handle
 			return
 		}
 
-		userID, err := h.userService.GetUserByEmailAndPassword(c, userInput.Email, userInput.Password)
+		userID, err := h.userService.GetUserIDByEmailAndPassword(c, userInput.Email, userInput.Password)
 		if err != nil {
 			if errors.Is(err, serviceErrors.ErrNoUserInfo) {
 				log.Printf("UserHandlers UserAuthenticationHandler ErrNoUserInfo: %s: email: %s", err, userInput.Email)
@@ -86,7 +84,7 @@ func (h *UserHandlers) UserAuthenticationHandler(env entities.Config) gin.Handle
 			return
 		}
 
-		token, err := h.userService.CreateToken(c, userID, jwtCnf)
+		token, err := authService.CreateToken(c, userID, jwtCnf)
 		if err != nil {
 			log.Printf("UserHandlers UserAuthenticationHandler err: %s: userID: %d", err, userID)
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "Can not create token"})

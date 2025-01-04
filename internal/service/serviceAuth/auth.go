@@ -6,15 +6,10 @@ import (
 	"fmt"
 	"log"
 	"sensors-app/internal/entities"
-	"sensors-app/internal/repository/repoErrors"
-	"sensors-app/internal/service/serviceErrors"
 
-	"sensors-app/utils"
 	"time"
-)
 
-const (
-	salt = "v8e7545t63454"
+	"github.com/golang-jwt/jwt"
 )
 
 type TokenRepo interface {
@@ -23,52 +18,70 @@ type TokenRepo interface {
 	TokenExists(cxt context.Context, userId int64) (bool, error)
 }
 
-type UserRepo interface {
-	CreateUser(cxt context.Context, user entities.User) (int64, error)
-	DeleteUser(cxt context.Context, userId int64) error
-	GetUserByEmailAndPassword(cxt context.Context, email, password string) (int64, error)
-}
-
 type AuthService struct {
 	tokenRepo TokenRepo
-	userRepo  UserRepo
 }
 
-func NewAuthService(tokenRepo TokenRepo, userRepo UserRepo) AuthService {
+func NewAuthService(tokenRepo TokenRepo) AuthService {
 	return AuthService{
 		tokenRepo: tokenRepo,
-		userRepo:  userRepo,
 	}
 }
 
-func (s *AuthService) CreateUser(cxt context.Context, user entities.User) (int64, error) {
-	user.Password = utils.GeneratePasswordHash(user.Password, salt)
-	id, err := s.userRepo.CreateUser(cxt, user)
-	if err != nil {
-		log.Printf("AuthService CreateUser err: %s", err)
-		if errors.Is(err, repoErrors.ErrUserAlreadyExists) {
-			return 0, serviceErrors.ErrUserAlreadyExists
+type tokenClaims struct {
+	jwt.StandardClaims
+	userId int64
+}
+
+func ParseToken(token string, cnf entities.JWT) (int64, error) {
+	parsedToken, err := jwt.ParseWithClaims(token, &tokenClaims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("invalid signing method")
 		}
+		return []byte(cnf.SignatureKey), nil
+	})
+
+	if err != nil {
 		return 0, err
 	}
-
-	return id, nil
-}
-
-func (s *AuthService) GetUserByEmailAndPassword(cxt context.Context, email, password string) (int64, error) {
-	passwordHash := utils.GeneratePasswordHash(password, salt)
-
-	userId, err := s.userRepo.GetUserByEmailAndPassword(cxt, email, passwordHash)
-	if err != nil {
-		if errors.Is(err, repoErrors.ErrNoUser) {
-			return 0, fmt.Errorf("%w: email: %s", serviceErrors.ErrNoUserInfo, email)
-		}
-		return 0, err
+	claims, ok := parsedToken.Claims.(*tokenClaims)
+	if !ok {
+		return 0, errors.New("token claims are not of type *tokenClaims")
 	}
 
-	return userId, nil
+	return claims.userId, nil
 }
 
-func (s *AuthService) DeleteUser(cxt context.Context, userId int64) error {
-	return s.userRepo.DeleteUser(cxt, userId)
+func (s *AuthService) CreateToken(cxt context.Context, userId int64, cnf entities.JWT) (string, error) {
+	token, err := generateToken(userId, cnf)
+	if err != nil {
+		log.Printf("AuthService CreateToken GenerateToken err: %s", err)
+		return "", fmt.Errorf("%w", err)
+	}
+
+	if err = s.tokenRepo.StoreToken(cxt, userId, token, cnf.TTL*time.Second); err != nil {
+		log.Printf("AuthService CreateToken StoreToken err: %s", err)
+		return "", fmt.Errorf("%w", err)
+	}
+
+	return token, nil
+}
+
+func generateToken(userId int64, cnf entities.JWT) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
+		jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(cnf.TTL).Unix(),
+			IssuedAt:  time.Now().Unix(),
+		},
+		userId})
+
+	return token.SignedString([]byte(cnf.SignatureKey))
+}
+
+func (s *AuthService) DeleteToken(cxt context.Context, userId int64, token string) error {
+	return s.tokenRepo.DeleteToken(cxt, userId)
+}
+
+func (s *AuthService) CheckToken(cxt context.Context, userId int64) (bool, error) {
+	return s.tokenRepo.TokenExists(cxt, userId)
 }

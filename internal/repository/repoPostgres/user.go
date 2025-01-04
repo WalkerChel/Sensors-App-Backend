@@ -63,7 +63,7 @@ func (r *UserRepo) DeleteUser(cxt context.Context, userId int64) error {
 	return err
 }
 
-func (r *UserRepo) GetUserByEmailAndPassword(cxt context.Context, email, password string) (int64, error) {
+func (r *UserRepo) GetUserIDByEmailAndPassword(cxt context.Context, email, password string) (int64, error) {
 	var id int64
 
 	query := fmt.Sprintf(`
