@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"sensors-app/internal/entities"
 	"sensors-app/internal/repository/repoErrors"
 	"sensors-app/internal/service/serviceErrors"
@@ -35,7 +34,6 @@ func (s *UserService) CreateUser(cxt context.Context, user entities.User) (int64
 	user.Password = utils.GeneratePasswordHash(user.Password, salt)
 	id, err := s.userRepo.CreateUser(cxt, user)
 	if err != nil {
-		log.Printf("UserService CreateUser err: %s", err)
 		if errors.Is(err, repoErrors.ErrUserAlreadyExists) {
 			return 0, serviceErrors.ErrUserAlreadyExists
 		}

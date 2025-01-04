@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"sensors-app/internal/api/middleware"
 	"sensors-app/internal/api/ports"
 	"sensors-app/internal/entities"
 
@@ -27,6 +28,7 @@ func (r *Handlers) InitRoutes(env entities.Config, authService ports.Authenticat
 	{
 		auth.POST("/sign-up", r.UserHandlers.CreateUserHandler())
 		auth.POST("/sign-in", r.UserHandlers.UserAuthenticationHandler(env, authService))
+		auth.Use(middleware.AuthMiddleware(env, authService)).POST("/log-out", r.UserHandlers.UserLogOutHandler(authService))
 	}
 
 	return router
