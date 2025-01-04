@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"sensors-app/internal/api/ports"
 	"sensors-app/internal/entities"
 
 	"github.com/gin-contrib/cors"
@@ -12,7 +13,7 @@ type Handlers struct {
 	UserHandlers UserHandlers
 }
 
-func (r *Handlers) InitRoutes(env entities.Config) http.Handler {
+func (r *Handlers) InitRoutes(env entities.Config, authService ports.Authentication) http.Handler {
 	router := gin.Default()
 
 	corsConfig := cors.DefaultConfig()
@@ -25,7 +26,7 @@ func (r *Handlers) InitRoutes(env entities.Config) http.Handler {
 	auth := router.Group("/auth")
 	{
 		auth.POST("/sign-up", r.UserHandlers.CreateUserHandler())
-		auth.POST(("/sign-in"), r.UserHandlers.UserAuthenticationHandler(env))
+		auth.POST("/sign-in", r.UserHandlers.UserAuthenticationHandler(env, authService))
 	}
 
 	return router
