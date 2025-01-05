@@ -13,6 +13,7 @@ import (
 	"sensors-app/internal/repository/repoPostgres"
 	"sensors-app/internal/repository/repoRedis"
 	"sensors-app/internal/service/serviceAuth"
+	"sensors-app/internal/service/serviceRegion"
 	"sensors-app/internal/service/serviceUser"
 	"sensors-app/server"
 	"syscall"
@@ -55,8 +56,12 @@ func Run() {
 
 	userRepo := repoPostgres.NewUserRepo(postgresDB)
 	log.Print("User repository was initialized successfully")
+
 	tokenRepo := repoRedis.NewTokenRepo(redisDB)
 	log.Print("Token repository was initialized successfully")
+
+	regionRepo := repoPostgres.NewRegionsRepo(postgresDB)
+	log.Print("Region repository was initialized successfully")
 
 	authService := serviceAuth.NewAuthService(&tokenRepo)
 	log.Print("Authentication service was initialized successfully")
@@ -64,11 +69,18 @@ func Run() {
 	userService := serviceUser.NewUserService(&userRepo)
 	log.Print("User service was initialized successfully")
 
+	regionService := serviceRegion.NewRegionService(&regionRepo)
+	log.Print("Region service was initialized successfully")
+
 	userHandlers := handler.NewUserHandlers(&userService)
 	log.Print("User handlers was initialized successfully")
 
+	regionHandlers := handler.NewRegionService(&regionService)
+	log.Print("region handlers was initialized successfully")
+
 	router := handler.Handlers{
-		UserHandlers: userHandlers,
+		UserHandlers:   userHandlers,
+		RegionHandlers: regionHandlers,
 	}
 	log.Print("Router struct was initialized successfully")
 
