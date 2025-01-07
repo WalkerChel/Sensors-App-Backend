@@ -14,10 +14,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const (
-	userIDCtxKey = "userID"
-)
-
 type UserService interface {
 	CreateUser(cxt context.Context, user entities.User) (int64, error)
 	GetUserIDByEmailAndPassword(cxt context.Context, email, password string) (int64, error)
@@ -129,7 +125,7 @@ func (h *UserHandlers) UserLogOutHandler(authService ports.Authentication) gin.H
 			return
 		}
 
-		log.Printf("User has successfully logged out: userID: %d", userID)
+		log.Printf("User has successfully logged out, userID: %d", userID)
 
 		c.JSON(http.StatusAccepted, gin.H{
 			"message": "successfully logged out",

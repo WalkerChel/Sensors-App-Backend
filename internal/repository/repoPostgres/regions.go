@@ -2,8 +2,6 @@ package repoPostgres
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"fmt"
 	"log"
 	"sensors-app/internal/entities"
@@ -37,12 +35,13 @@ func (r *RegionsRepo) GetAllRegions(ctx context.Context) ([]entities.Region, err
 	SELECT * FROM %s`, regionsTable)
 
 	if err := r.db.SelectContext(ctx, &regions, query); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			log.Printf("RegionsRepo GetAllRegions no recors in table %s", regionsTable)
-			return nil, fmt.Errorf("%w: table %s", repoErrors.ErrNoRecords, regionsTable)
-		}
 		log.Printf("RegionsRepo GetAllRegions error: %s", err)
 		return nil, err
+	}
+
+	if len(regions) == 0 {
+		log.Printf("RegionsRepo GetAllRegions no recors in table %s", regionsTable)
+		return nil, fmt.Errorf("%w: table %s", repoErrors.ErrNoRecords, regionsTable)
 	}
 
 	return regions, nil

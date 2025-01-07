@@ -20,7 +20,7 @@ const (
 func AuthMiddleware(env entities.Config, authService ports.Authentication) gin.HandlerFunc {
 	jwtCnf := env.JWT
 	return func(c *gin.Context) {
-		uriPath := c.FullPath()
+		uriPath := c.Request.URL.String()
 
 		bearerTokenStr := c.GetHeader(authHeader)
 		if bearerTokenStr == "" {

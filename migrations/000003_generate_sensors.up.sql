@@ -12,7 +12,7 @@ BEGIN
 
     FOR regId IN 1..regionsNumber LOOP
         FOR n IN 1..floor(random() * regionsNumber + 1)::INT LOOP
-            INSERT INTO sensors (RegionId, Name, Longitude, Latitude) 
+            INSERT INTO sensors (Region_Id, Name, Longitude, Latitude) 
             VALUES (
                 regId, 
                 substr(md5(random()::text), 1, 12), 
