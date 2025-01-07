@@ -12,7 +12,7 @@ BEGIN
 
     FOR sensId IN 1..sensNumber LOOP
         FOR n IN 1..floor(random() * sensNumber + 1)::INT LOOP
-            INSERT INTO readings(sensorId, temperature, createdAt) 
+            INSERT INTO readings(sensor_Id, temperature, created_At) 
             VALUES(
               sensId, 
               random() * 90 - 30,
