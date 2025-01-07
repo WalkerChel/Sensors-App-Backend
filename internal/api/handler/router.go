@@ -34,7 +34,7 @@ func (r *Handlers) InitRoutes(env entities.Config, authService ports.Authenticat
 
 	regions := router.Group("/regions", middleware.AuthMiddleware(env, authService))
 	{
-		regions.GET("", r.RegionHandlers.GetAllRegions())
+		regions.GET("", r.RegionHandlers.GetAllRegionsHandler(authService))
 	}
 
 	return router
