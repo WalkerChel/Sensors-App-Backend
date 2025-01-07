@@ -6,7 +6,7 @@
 ### How to start the service
 1. Move to the project directory.
 2. Create ```.env``` file and copy ```.env.example``` content into it(or use command ```mv .env.example .env```). After that simply fill in all required variables.
-3. Run ```docker compose up --build app``` command to start application.
+3. To rebuild and run application use ```docker compose up --build app``` command. To launch an already builded app, use ```docker compose up app```.
 
 ### Manual Start
 
