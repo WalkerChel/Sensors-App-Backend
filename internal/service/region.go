@@ -1,4 +1,4 @@
-package serviceRegion
+package service
 
 import (
 	"context"

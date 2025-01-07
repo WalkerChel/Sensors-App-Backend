@@ -9,12 +9,11 @@ import (
 	"sensors-app/db"
 
 	"sensors-app/internal/api/handler"
+	"sensors-app/internal/service"
 
 	"sensors-app/internal/repository/repoPostgres"
 	"sensors-app/internal/repository/repoRedis"
-	"sensors-app/internal/service/serviceAuth"
-	"sensors-app/internal/service/serviceRegion"
-	"sensors-app/internal/service/serviceUser"
+
 	"sensors-app/server"
 	"syscall"
 
@@ -63,20 +62,20 @@ func Run() {
 	regionRepo := repoPostgres.NewRegionsRepo(postgresDB)
 	log.Print("Region repository was initialized successfully")
 
-	authService := serviceAuth.NewAuthService(&tokenRepo)
+	authService := service.NewAuthService(&tokenRepo)
 	log.Print("Authentication service was initialized successfully")
 
-	userService := serviceUser.NewUserService(&userRepo)
+	userService := service.NewUserService(&userRepo)
 	log.Print("User service was initialized successfully")
 
-	regionService := serviceRegion.NewRegionService(&regionRepo)
+	regionService := service.NewRegionService(&regionRepo)
 	log.Print("Region service was initialized successfully")
 
 	userHandlers := handler.NewUserHandlers(&userService)
 	log.Print("User handlers was initialized successfully")
 
 	regionHandlers := handler.NewRegionService(&regionService)
-	log.Print("region handlers was initialized successfully")
+	log.Print("Region handlers was initialized successfully")
 
 	router := handler.Handlers{
 		UserHandlers:   userHandlers,
