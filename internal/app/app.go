@@ -62,6 +62,9 @@ func Run() {
 	regionRepo := repoPostgres.NewRegionsRepo(postgresDB)
 	log.Print("Region repository was initialized successfully")
 
+	sensorRepo := repoPostgres.NewSensorsRepo(postgresDB)
+	log.Print("Sensor repository was initialized successfully")
+	
 	authService := service.NewAuthService(&tokenRepo)
 	log.Print("Authentication service was initialized successfully")
 
@@ -71,15 +74,22 @@ func Run() {
 	regionService := service.NewRegionService(&regionRepo)
 	log.Print("Region service was initialized successfully")
 
+	sensorService := service.NewSensorService(&sensorRepo)
+	log.Print("Sensor service was initialized successfully")
+
 	userHandlers := handler.NewUserHandlers(&userService)
 	log.Print("User handlers was initialized successfully")
 
 	regionHandlers := handler.NewRegionService(&regionService)
 	log.Print("Region handlers was initialized successfully")
 
+	sensorHandlers := handler.NewSensorHandlers(&sensorService)
+	log.Print("Sensor handlers was initialized successfully")
+
 	router := handler.Handlers{
 		UserHandlers:   userHandlers,
 		RegionHandlers: regionHandlers,
+		SensorHandlers: sensorHandlers,
 	}
 	log.Print("Router struct was initialized successfully")
 

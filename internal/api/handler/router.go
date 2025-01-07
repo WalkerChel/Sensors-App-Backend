@@ -13,6 +13,7 @@ import (
 type Handlers struct {
 	UserHandlers   UserHandlers
 	RegionHandlers RegionHandlers
+	SensorHandlers SensorHandlers
 }
 
 func (r *Handlers) InitRoutes(env entities.Config, authService ports.Authentication) http.Handler {
@@ -35,6 +36,12 @@ func (r *Handlers) InitRoutes(env entities.Config, authService ports.Authenticat
 	regions := router.Group("/regions", middleware.AuthMiddleware(env, authService))
 	{
 		regions.GET("", r.RegionHandlers.GetAllRegionsHandler(authService))
+	}
+
+	sensors := router.Group("/sensors", middleware.AuthMiddleware(env, authService))
+	{
+		// /query?regionID={regionID}
+		sensors.GET("/query", r.SensorHandlers.GetSensorsInRegionHandler(authService))
 	}
 
 	return router
