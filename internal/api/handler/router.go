@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"sensors-app/internal/api/middleware"
 	"sensors-app/internal/api/ports"
@@ -36,12 +37,13 @@ func (r *Handlers) InitRoutes(env entities.Config, authService ports.Authenticat
 	regions := router.Group("/regions", middleware.AuthMiddleware(env, authService))
 	{
 		regions.GET("", r.RegionHandlers.GetAllRegionsHandler(authService))
+		regions.GET(fmt.Sprintf(":%s/sensors", regionIdKey), r.SensorHandlers.GetSensorsInRegionHandler(authService))
 	}
 
 	sensors := router.Group("/sensors", middleware.AuthMiddleware(env, authService))
 	{
 		// /query?regionID={regionID}
-		sensors.GET("/query", r.SensorHandlers.GetSensorsInRegionHandler(authService))
+		sensors.GET("", r.SensorHandlers.GetPaginatedSensorsHandler(authService))
 	}
 
 	return router

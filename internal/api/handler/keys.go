@@ -6,5 +6,7 @@ const (
 
 // uri params
 const (
-	regionIdQuery = "regionID"
+	limitKey    = "limit"
+	pageKey     = "page"
+	regionIdKey = "region_id"
 )
