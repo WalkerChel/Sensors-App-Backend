@@ -30,6 +30,7 @@ func NewUserHandlers(userService UserService) UserHandlers {
 	}
 }
 
+// /auth/sign-up
 func (h *UserHandlers) CreateUserHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var userInput apiRequests.UserRegistration
@@ -61,6 +62,7 @@ func (h *UserHandlers) CreateUserHandler() gin.HandlerFunc {
 	}
 }
 
+// /auth/sign-in
 func (h *UserHandlers) UserAuthenticationHandler(env entities.Config, authService ports.Authentication) gin.HandlerFunc {
 	jwtCnf := env.JWT
 	return func(c *gin.Context) {
@@ -99,6 +101,7 @@ func (h *UserHandlers) UserAuthenticationHandler(env entities.Config, authServic
 	}
 }
 
+// /auth/log-out
 func (h *UserHandlers) UserLogOutHandler(authService ports.Authentication) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID, err := authService.GetUserIDFromCtx(c, userIDCtxKey)

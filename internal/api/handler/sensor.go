@@ -99,6 +99,7 @@ func (h *SensorHandlers) GetSensorsInRegionHandler(authService ports.Authenticat
 	}
 }
 
+// /sensors?page={page}&limit={limit}
 func (h *SensorHandlers) GetPaginatedSensorsHandler(authService ports.Authentication) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID, err := authService.GetUserIDFromCtx(c, userIDCtxKey)

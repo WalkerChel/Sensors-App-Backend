@@ -26,6 +26,7 @@ func NewRegionService(regionService RegionService) RegionHandlers {
 	}
 }
 
+// /regions
 func (h *RegionHandlers) GetAllRegionsHandler(authService ports.Authentication) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID, err := authService.GetUserIDFromCtx(c, userIDCtxKey)
