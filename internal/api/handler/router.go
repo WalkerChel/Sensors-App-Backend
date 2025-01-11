@@ -11,6 +11,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const (
+	userIDCtxKey = "userID"
+)
+
+// uri params
+const (
+	limitKey    = "limit"
+	pageKey     = "page"
+	regionIdKey = "region_id"
+)
+
 type Handlers struct {
 	UserHandlers   UserHandlers
 	RegionHandlers RegionHandlers
@@ -37,7 +48,7 @@ func (r *Handlers) InitRoutes(env entities.Config, authService ports.Authenticat
 	regions := router.Group("/regions", middleware.AuthMiddleware(env, authService))
 	{
 		regions.GET("", r.RegionHandlers.GetAllRegionsHandler(authService))
-		regions.GET(fmt.Sprintf(":%s/sensors", regionIdKey), r.SensorHandlers.GetSensorsInRegionHandler(authService))
+		regions.GET(fmt.Sprintf("/:%s/sensors", regionIdKey), r.SensorHandlers.GetSensorsInRegionHandler(authService))
 	}
 
 	sensors := router.Group("/sensors", middleware.AuthMiddleware(env, authService))
