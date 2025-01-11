@@ -20,12 +20,14 @@ const (
 	limitKey    = "limit"
 	pageKey     = "page"
 	regionIdKey = "region_id"
+	sensorIdKey = "sensor_id"
 )
 
 type Handlers struct {
-	UserHandlers   UserHandlers
-	RegionHandlers RegionHandlers
-	SensorHandlers SensorHandlers
+	UserHandlers     UserHandlers
+	RegionHandlers   RegionHandlers
+	SensorHandlers   SensorHandlers
+	ReadingsHandlers ReadingsHandlers
 }
 
 func (r *Handlers) InitRoutes(env entities.Config, authService ports.Authentication) http.Handler {
@@ -53,8 +55,8 @@ func (r *Handlers) InitRoutes(env entities.Config, authService ports.Authenticat
 
 	sensors := router.Group("/sensors", middleware.AuthMiddleware(env, authService))
 	{
-		// /query?regionID={regionID}
 		sensors.GET("", r.SensorHandlers.GetPaginatedSensorsHandler(authService))
+		sensors.GET(fmt.Sprintf("/:%s/readings", sensorIdKey), r.ReadingsHandlers.GetSensorReadingsHandler(authService))
 	}
 
 	return router
