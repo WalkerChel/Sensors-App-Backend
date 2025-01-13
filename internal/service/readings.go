@@ -14,6 +14,8 @@ import (
 type ReadingsRepo interface {
 	FindReadingsBySensorID(ctx context.Context, sensorId int64) ([]entities.Reading, error)
 	FindReadingsBySensorIdAndTimeInterval(ctx context.Context, sensorId int64, time1, time2 time.Time) ([]entities.Reading, error)
+	AltFindReadingsBySensorID(ctx context.Context, sensorId int64) ([]entities.Reading, float64, float64, float64, error)
+	AltFindReadingsBySensorIdAndTimeInterval(ctx context.Context, sensorId int64, time1, time2 time.Time) ([]entities.Reading, float64, float64, float64, error)
 }
 
 type ReadingsService struct {
@@ -57,4 +59,40 @@ func (s *ReadingsService) FindReadingsBySensorID(ctx context.Context, sensorId i
 	}
 
 	return readings, nil
+}
+
+func (s *ReadingsService) AltFindReadingsBySensorID(ctx context.Context, sensorId int64, time1, time2 time.Time) ([]entities.Reading, float64, float64, float64, error) {
+	var (
+		readings    []entities.Reading
+		minTemp     float64
+		avgTemp     float64
+		maxTemp     float64
+		err         error
+		currentTime = time.Now()
+	)
+
+	if time2.After(currentTime) {
+		return nil, 0, 0, 0, fmt.Errorf("%w, endDate:\"%s\" currentDate:\"%s\"", serviceErrors.ErrEndDateAfterCurrDate, time2, currentTime)
+	}
+
+	if time1.After(time2) {
+		return nil, 0, 0, 0, fmt.Errorf("%w, time1:\"%s\" time2:\"%s\"", serviceErrors.ErrIncorrectDates, time1, time2)
+	}
+
+	if time1.IsZero() && time2.IsZero() {
+		log.Printf("Start searching for all readings with sensor_id: %d", sensorId)
+		readings, minTemp, avgTemp, maxTemp, err = s.readingsRepo.AltFindReadingsBySensorID(ctx, sensorId)
+	} else {
+		log.Printf("Start searching for readings with sensor_id: %d between time1: [%s] and time2: [%s]", sensorId, time1, time2)
+		readings, minTemp, avgTemp, maxTemp, err = s.readingsRepo.AltFindReadingsBySensorIdAndTimeInterval(ctx, sensorId, time1, time2)
+	}
+
+	if err != nil {
+		if errors.Is(err, repoErrors.ErrNoRecords) {
+			return nil, 0, 0, 0, fmt.Errorf("%w, sensorID=%d", serviceErrors.ErrNoReadingsData, sensorId)
+		}
+		return nil, 0, 0, 0, err
+	}
+
+	return readings, minTemp, avgTemp, maxTemp, nil
 }

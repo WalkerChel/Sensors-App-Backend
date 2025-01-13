@@ -17,10 +17,12 @@ const (
 
 // uri params
 const (
-	limitKey    = "limit"
-	pageKey     = "page"
-	regionIdKey = "region_id"
-	sensorIdKey = "sensor_id"
+	limitKey     = "limit"
+	pageKey      = "page"
+	regionIdKey  = "region-id"
+	sensorIdKey  = "sensor-id"
+	startDateKey = "start-date"
+	endDateKey   = "end-date"
 )
 
 type Handlers struct {
@@ -57,6 +59,7 @@ func (r *Handlers) InitRoutes(env entities.Config, authService ports.Authenticat
 	{
 		sensors.GET("", r.SensorHandlers.GetPaginatedSensorsHandler(authService))
 		sensors.GET(fmt.Sprintf("/:%s/readings", sensorIdKey), r.ReadingsHandlers.GetSensorReadingsHandler(authService))
+		sensors.GET(fmt.Sprintf("alt/:%s/readings", sensorIdKey), r.ReadingsHandlers.AltGetSensorReadingsHandler(authService))
 	}
 
 	return router

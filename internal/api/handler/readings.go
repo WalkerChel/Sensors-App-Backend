@@ -13,6 +13,7 @@ import (
 	"sensors-app/internal/api/ports"
 	"sensors-app/internal/entities"
 	"sensors-app/internal/service/serviceErrors"
+	"sensors-app/utils"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -20,6 +21,7 @@ import (
 
 type ReadingsService interface {
 	FindReadingsBySensorID(ctx context.Context, sensorId int64, time1, time2 time.Time) ([]entities.Reading, error)
+	AltFindReadingsBySensorID(ctx context.Context, sensorId int64, time1, time2 time.Time) ([]entities.Reading, float64, float64, float64, error)
 }
 
 type ReadingsHandlers struct {
@@ -152,6 +154,193 @@ func (h *ReadingsHandlers) GetSensorReadingsHandler(authService ports.Authentica
 		c.JSON(http.StatusOK, apiResponses.ReadingsForSensorResponse{
 			Readings: readingsPlot,
 			SensorId: sensIdInt64,
+		})
+	}
+}
+
+func (h *ReadingsHandlers) AltGetSensorReadingsHandler(authService ports.Authentication) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userID, err := authService.GetUserIDFromCtx(c, userIDCtxKey)
+		if err != nil {
+			log.Printf("ReadingsHandlers GetSensorReadingsHandler err: %s", err)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+				"message": "something went wrong when extracting userID from request's context",
+			})
+			return
+		}
+
+		sensIdParam := c.Param(sensorIdKey)
+		sensId, ok := big.NewInt(0).SetString(sensIdParam, 10)
+
+		if !ok {
+			log.Printf("ReadingsHandlers GetSensorReadingsHandler error: %s param is not a number, given param: %s", regionIdKey, sensIdParam)
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"error": fmt.Sprintf("given path {%s} param is not a number", regionIdKey),
+			})
+			return
+		}
+
+		if !sensId.IsUint64() {
+			log.Printf("ReadingsHandlers GetSensorReadingsHandler error: %s param is not an uint64 type, given param: %s", regionIdKey, sensIdParam)
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"error": fmt.Sprintf("given path {%s} param is too large or negative", regionIdKey),
+			})
+			return
+		}
+
+		sensIdInt64 := sensId.Int64()
+
+		var dateStart, dateEnd time.Time
+
+		// check that query params after "?" are given
+		rawQuery := c.Request.URL.RawQuery
+		if rawQuery != "" {
+			if !utils.QueryParamExists(rawQuery, startDateKey) && !utils.QueryParamExists(rawQuery, endDateKey) {
+				log.Printf("ReadingsHandlers GetSensorReadingsHandler: start or end dates query params are not given")
+				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+					"message": fmt.Sprintf("[%s] and/or [%s] query params must be specified", startDateKey, endDateKey),
+				})
+				return
+			}
+
+			start := c.Query(startDateKey)
+			end := c.Query(endDateKey)
+
+			if utils.QueryParamExists(rawQuery, startDateKey) && start == "" {
+				log.Printf("ReadingsHandlers GetSensorReadingsHandler: [%s] query param key is given, but not specified", startDateKey)
+				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+					"message": fmt.Sprintf("[%s] param is not specified", startDateKey),
+				})
+				return
+			}
+			if utils.QueryParamExists(rawQuery, endDateKey) && end == "" {
+				log.Printf("ReadingsHandlers GetSensorReadingsHandler: [%s] query param key is given, but not specified", endDateKey)
+				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+					"message": fmt.Sprintf("[%s] param is not specified", endDateKey),
+				})
+				return
+			}
+
+			if start != "" {
+				dateStart, err = time.Parse(time.RFC3339, start)
+				if err != nil {
+					log.Printf("ReadingsHandlers GetSensorReadingsHandler: start date parsing error: [%s]", err)
+					c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+						"error": fmt.Sprintf("[%s] query param parse error. Time should be RFC3339 +0000 UTC", startDateKey),
+					})
+					return
+				}
+			}
+
+			if end != "" {
+				dateEnd, err = time.Parse(time.RFC3339, end)
+				if err != nil {
+					log.Printf("ReadingsHandlers GetSensorReadingsHandler: end date parsing error: [%s]", err)
+					c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+						"error": fmt.Sprintf("[%s] query param parse error. Time should be RFC3339", endDateKey),
+					})
+					return
+				}
+			}
+
+			if !dateStart.IsZero() && dateEnd.IsZero() {
+				dateEnd = time.Now()
+			}
+
+			log.Printf("Set start date to [%s], end date to [%s]", dateStart, dateEnd)
+
+		}
+
+		// var dates apiRequests.ReadingsBetweenDates
+
+		// // can not read body before binding. it closes after first reading
+		// // reqData, err := c.GetRawData()
+		// // if err != nil {
+		// // 	log.Printf("ReadingsHandlers GetSensorReadingsHandler get request data err: %s", err)
+		// // 	c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+		// // 		"error": "something went wrong when reading request's data",
+		// // 	})
+		// // 	return
+		// // }
+
+		// if c.Request.Body != nil { // && string(reqData) != "" {
+		// 	if err := c.ShouldBindJSON(&dates); err != nil {
+		// 		if !errors.Is(err, io.EOF) {
+		// 			log.Printf("ReadingsHandlers GetSensorReadingsHandler bindJSON err: %s", err)
+		// 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+		// 				"error": "check request's body",
+		// 			})
+		// 			return
+		// 		}
+		// 		log.Print("ReadingsHandlers GetSensorReadingsHandler bindJSON EOF, trying to get all readings")
+
+		// 	}
+		// 	if dates.StartDate != nil {
+		// 		dateStart = time.Date(dates.StartDate.Year,
+		// 			time.Month(dates.StartDate.Month),
+		// 			dates.StartDate.Day,
+		// 			dates.StartDate.Hour,
+		// 			dates.StartDate.Minute,
+		// 			dates.StartDate.Second, 0, time.UTC)
+		// 	}
+
+		// 	if dates.EndDate != nil {
+		// 		dateEnd = time.Date(dates.EndDate.Year,
+		// 			time.Month(dates.EndDate.Month),
+		// 			dates.EndDate.Day,
+		// 			dates.EndDate.Hour,
+		// 			dates.EndDate.Minute,
+		// 			dates.EndDate.Second, 0, time.UTC)
+		// 	} else if dates.StartDate != nil && dates.EndDate == nil {
+		// 		dateEnd = time.Now()
+		// 	}
+		// }
+
+		readings, minTemp, avgTemp, maxTemp, err := h.readingsService.AltFindReadingsBySensorID(c, sensIdInt64, dateStart, dateEnd)
+		if err != nil {
+			if errors.Is(err, serviceErrors.ErrNoReadingsData) {
+				log.Printf("ReadingsHandlers GetSensorReadingsHandler no data: %s", err)
+				c.AbortWithStatus(http.StatusNoContent)
+				return
+			}
+			if errors.Is(err, serviceErrors.ErrIncorrectDates) {
+				log.Printf("ReadingsHandlers GetSensorReadingsHandler dates err: %s", err)
+				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+					"message": "start date can not be after end date",
+				})
+				return
+			}
+			if errors.Is(err, serviceErrors.ErrEndDateAfterCurrDate) {
+				log.Printf("ReadingsHandlers GetSensorReadingsHandler dates err: %s", err)
+				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+					"message": "end date can not be after current date",
+				})
+				return
+			}
+			log.Printf("ReadingsHandlers GetSensorReadingsHandler getting readings err: %s", err)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+				"error": "something went wrong when finding readings",
+			})
+			return
+		}
+
+		var readingsPlot []apiResponses.ReadingForPlotResponse
+
+		for _, reading := range readings {
+			readungPlot := apiResponses.ReadingForPlotResponse{
+				Temperature: reading.Temperature,
+				CreatedAt:   reading.CreatedAt,
+			}
+			readingsPlot = append(readingsPlot, readungPlot)
+		}
+
+		log.Printf("ReadingsHandlers GetSensorReadingsHandler: successfully sent readings from sensor: %d to userID: %d", sensIdInt64, userID)
+		c.JSON(http.StatusOK, apiResponses.ReadingsForSensorResponse{
+			Readings:       readingsPlot,
+			SensorId:       sensIdInt64,
+			MinTemperature: minTemp,
+			AvgTemperature: avgTemp,
+			MaxTemperature: maxTemp,
 		})
 	}
 }
