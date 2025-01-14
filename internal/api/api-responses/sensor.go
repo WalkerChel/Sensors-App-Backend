@@ -11,3 +11,8 @@ type SensorsInRegionResponse struct {
 	Sensors  []SensorWithoutRegionResponse `json:"sensors"`
 	RegionID int64                         `json:"region_id"`
 }
+
+type SensorsPaginatedResponse struct {
+	Sensors         []SensorWithoutRegionResponse `json:"sensors"`
+	AllSensorsCount int64                         `json:"all_sensors_amount,omitempty"`
+}

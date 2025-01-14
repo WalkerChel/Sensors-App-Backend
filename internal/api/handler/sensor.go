@@ -17,7 +17,7 @@ import (
 
 type SensorService interface {
 	GetSensorsByRegionID(ctx context.Context, regionId int64) ([]entities.Sensor, error)
-	GetPaginatedSensors(ctx context.Context, limit, offset int64) ([]entities.Sensor, error)
+	GetPaginatedSensors(ctx context.Context, limit, offset int64) ([]entities.Sensor, int64, error)
 }
 
 type SensorHandlers struct {
@@ -146,7 +146,7 @@ func (h *SensorHandlers) GetPaginatedSensorsHandler(authService ports.Authentica
 			log.Printf("calculated offset: (%d[page] - 1) * %d[limit] = %d[offset]", pageInt64, limitInt64, offset)
 		}
 
-		sensors, err := h.sensorService.GetPaginatedSensors(c, limitInt64, offset)
+		sensors, amount, err := h.sensorService.GetPaginatedSensors(c, limitInt64, offset)
 		if err != nil {
 			if errors.Is(err, serviceErrors.ErrNoSensorsData) {
 				log.Printf("SensorHandlers GetPaginatedSensorsHandler: %s", err)
@@ -160,7 +160,20 @@ func (h *SensorHandlers) GetPaginatedSensorsHandler(authService ports.Authentica
 			return
 		}
 
+		var sensorsResponse apiResponses.SensorsPaginatedResponse
+
+		for _, sensor := range sensors {
+			sensorsResponse.Sensors = append(sensorsResponse.Sensors, apiResponses.SensorWithoutRegionResponse{
+				ID:        sensor.Id,
+				Name:      sensor.Name,
+				Longitude: sensor.Longitude,
+				Latitude:  sensor.Latitude,
+			})
+		}
+
+		sensorsResponse.AllSensorsCount = amount
+
 		log.Printf("SensorHandlers GetPaginatedSensorsHandler: successfully sent sensors limit: %d, offset: %d to user with ID: %d", limitInt64, offset, userID)
-		c.JSON(http.StatusOK, sensors)
+		c.JSON(http.StatusOK, sensorsResponse)
 	}
 }

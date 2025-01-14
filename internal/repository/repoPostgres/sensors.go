@@ -6,6 +6,7 @@ import (
 	"log"
 	"sensors-app/internal/entities"
 	"sensors-app/internal/repository/repoErrors"
+	"sensors-app/internal/repository/repoPostgres/models"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -40,11 +41,11 @@ func (r *SensorsRepo) GetSensorsByRegionID(ctx context.Context, regionId int64) 
 	return sensors, nil
 }
 
-func (r *SensorsRepo) GetPaginatedSensors(ctx context.Context, limit, offset int64) ([]entities.Sensor, error) {
+func (r *SensorsRepo) GetPaginatedSensors(ctx context.Context, limit, offset int64) ([]entities.Sensor, int64, error) {
 	var (
-		sensors []entities.Sensor
-		query   string
-		err     error
+		sensorsWithAmount []models.SensorsWithAllAmount
+		query             string
+		err               error
 	)
 
 	if limit == -1 {
@@ -52,25 +53,38 @@ func (r *SensorsRepo) GetPaginatedSensors(ctx context.Context, limit, offset int
 		SELECT * FROM %s
 		ORDER BY id DESC`, sensorsTable)
 
-		err = r.db.SelectContext(ctx, &sensors, query)
+		err = r.db.SelectContext(ctx, &sensorsWithAmount, query)
 	} else {
 		query = fmt.Sprintf(`
 	SELECT * FROM %s
+	CROSS JOIN (SELECT COUNT(*) AS all_sensors_amount FROM sensors)
 	ORDER BY id DESC
 	LIMIT $1 OFFSET $2`, sensorsTable)
 
-		err = r.db.SelectContext(ctx, &sensors, query, limit, offset)
+		err = r.db.SelectContext(ctx, &sensorsWithAmount, query, limit, offset)
 	}
 
 	if err != nil {
 		log.Printf("SensorsRepo GetPaginatedSensors error: %s", err)
-		return nil, err
+		return nil, 0, err
 	}
 
-	if len(sensors) == 0 {
+	if len(sensorsWithAmount) == 0 {
 		log.Printf("SensorsRepo GetPaginatedSensors no recors in table %s for limit: %d, offset: %d", sensorsTable, limit, offset)
-		return nil, fmt.Errorf("%w: table %s, limit: %d, offset: %d", repoErrors.ErrNoRecords, sensorsTable, limit, offset)
+		return nil, 0, fmt.Errorf("%w: table %s, limit: %d, offset: %d", repoErrors.ErrNoRecords, sensorsTable, limit, offset)
 	}
 
-	return sensors, nil
+	var sensors []entities.Sensor
+
+	for _, sensor := range sensorsWithAmount {
+		sensors = append(sensors, entities.Sensor{
+			Id:        sensor.Id,
+			RegionId:  sensor.RegionId,
+			Name:      sensor.Name,
+			Longitude: sensor.Longitude,
+			Latitude:  sensor.Latitude,
+		})
+	}
+
+	return sensors, sensorsWithAmount[0].Amount, nil
 }

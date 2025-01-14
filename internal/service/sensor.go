@@ -11,7 +11,7 @@ import (
 
 type SensorRepo interface {
 	GetSensorsByRegionID(ctx context.Context, regionId int64) ([]entities.Sensor, error)
-	GetPaginatedSensors(ctx context.Context, limit, offset int64) ([]entities.Sensor, error)
+	GetPaginatedSensors(ctx context.Context, limit, offset int64) ([]entities.Sensor, int64, error)
 }
 
 type SensorService struct {
@@ -36,14 +36,14 @@ func (s *SensorService) GetSensorsByRegionID(ctx context.Context, regionId int64
 	return sensors, nil
 }
 
-func(s *SensorService) GetPaginatedSensors(ctx context.Context, limit, offset int64) ([]entities.Sensor, error) {
-	sensors, err := s.sensorRepo.GetPaginatedSensors(ctx, limit, offset)
+func(s *SensorService) GetPaginatedSensors(ctx context.Context, limit, offset int64) ([]entities.Sensor, int64, error) {
+	sensors, amount, err := s.sensorRepo.GetPaginatedSensors(ctx, limit, offset)
 	if err != nil {
 		if errors.Is(err, repoErrors.ErrNoRecords) {
-			return nil, fmt.Errorf("%w, limit: %d, offset: %d", serviceErrors.ErrNoSensorsData, limit, offset)
+			return nil, 0, fmt.Errorf("%w, limit: %d, offset: %d", serviceErrors.ErrNoSensorsData, limit, offset)
 		}
-		return nil, err
+		return nil, 0, err
 	}
 
-	return sensors, nil
+	return sensors, amount, nil
 }
