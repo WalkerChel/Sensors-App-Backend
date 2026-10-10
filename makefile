@@ -1,65 +1,71 @@
 include .env
 export
 
-MIGRATIONS_PATH=./migrations
-
-.PHONY:postgres-up
+.PHONY: postgres-up
 postgres-up:
-	docker run --name=${POSTGRES_DB} \
-	-e POSTGRES_USER=${POSTGRES_USER} \
-	-e POSTGRES_DB=${POSTGRES_DB} \
-	-e POSTGRES_PASSWORD=${POSTGRES_PASSWORD} \
-	-e POSTGRES_SSL_MODE=${POSTGRES_SSL_MODE} \
-	-p=${POSTGRES_PORT}:${POSTGRES_PORT} \
-	-d postgres:17.2
+	docker compose up -d postgres_db
 
-.PHONY:postgres-down
+.PHONY: postgres-down
 postgres-down:
-	docker stop ${POSTGRES_DB} && docker rm ${POSTGRES_DB};
+	docker compose down postgres_db
 
-.PHONY:redis-up
+.PHONY: redis-up
 redis-up:
-	docker run --name=${REDIS_CONTAINER_NAME} \
-	-e REDIS_USER=${REDIS_USER} \
-	-e REDIS_USER_PASSWORD=${REDIS_USER_PASSWORD} \
-	-p=${REDIS_PORT}:${REDIS_PORT} \
-	-d redis:7.4.1
+	docker compose up -d redis_db
 
-.PHONY:redis-down
+.PHONY: redis-down
 redis-down:
-	docker stop ${REDIS_CONTAINER_NAME} && docker rm ${REDIS_CONTAINER_NAME};
+	docker compose down redis_db
 
 .PHONY: migrate-up
 migrate-up:
-	echo "Migrating up..."
-	migrate -path ${MIGRATIONS_PATH} -database 'postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=${POSTGRES_SSL_MODE}' -verbose up
-
+	@echo "Migrating up..."
+	docker compose run --rm migrator
 
 .PHONY: migrate-down
 migrate-down:
-	echo "Migrating down..."
-	migrate -path ${MIGRATIONS_PATH} -database 'postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=${POSTGRES_SSL_MODE}' -verbose down
+	@echo "Migrating down..."
+	docker compose run --rm migrator -- --path migrations --database "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_db:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=${POSTGRES_SSL_MODE}" down
 
-.PHONY: infrastructure-stop
-infrastructure-stop:
-	@make postgres-down \
-	&& make redis-down
+.PHONY: app-up
+app-up:
+	docker compose up --build -d app
+
+.PHONY: app-down
+app-down:
+	docker compose down app
 
 .PHONY: infrastructure-up
 infrastructure-up:
-	@make postgres-up \
-	&& make redis-up
+	docker compose up -d postgres_db redis_db
+
+.PHONY: infrastructure-stop
+infrastructure-stop:
+	docker compose down postgres_db redis_db
+
+.PHONY: compose-up
+compose-up:
+	docker compose up --build -d
+
+.PHONY: compose-down
+compose-down:
+	docker compose down -v
 
 .PHONY: help
 help:
-	@echo "												"
-	@echo "	available commands:							"
-	@echo "												"
-	@echo "	infrastructure-up	->		start all databases"
-	@echo "	infrastructure-stop	->		remove all databases"
-	@echo "	postgres-up	->		creates postgres db docker container"
-	@echo "	postgres-down	->		stops and removes postgres db docker container"
-	@echo "	redis-up	->		creates redis db docker container"
-	@echo "	redis-down	->		stops and removes redis db docker container"
-	@echo "	migrate-up	->		applies up migrations to db"
-	@echo "	migrate-down	->		applies down migrations to db"
+	@echo "                                                                               "
+	@echo " available commands:                                                           "
+	@echo "                                                                               "
+	@echo " compose-up          ->    builds and starts all docker-compose services"
+	@echo " compose-down        ->    stops and removes all services and volumes"
+	@echo " infrastructure-up   ->    starts postgres and redis databases"
+	@echo " infrastructure-stop ->    stops and removes all databases / services"
+	@echo " app-up              ->    builds and runs the app container"
+	@echo " app-down            ->    stops and removes the app container"
+	@echo " postgres-up         ->    creates postgres db container via compose"
+	@echo " postgres-down       ->    stops and removes postgres db container"
+	@echo " redis-up            ->    creates redis db container via compose"
+	@echo " redis-down          ->    stops and removes redis db container"
+	@echo " migrate-up          ->    runs up migrations using the compose migrator service"
+	@echo " migrate-down        ->    runs down migrations against the database"
+	@echo "                                                                               "

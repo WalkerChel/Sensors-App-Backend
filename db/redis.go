@@ -7,9 +7,10 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func NewRedisDB(ctx context.Context, host, port, password string, DB int) (*redis.Client, error) {
+func NewRedisDB(ctx context.Context, host, port, username, password string, DB int) (*redis.Client, error) {
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     net.JoinHostPort(host, port),
+		Username: username,
 		Password: password,
 		DB:       DB,
 	})

@@ -1,0 +1,22 @@
+# Version control
+.git/
+.gitignore
+
+# Environment files
+.env
+
+# Local build artifacts and binaries
+bin/
+dist/
+
+# Local Docker volumes and data persistence
+docker/volumes/
+
+# IDE and OS specific files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Documentation and markdown files
+README.md

@@ -1,34 +1,34 @@
-# IDEs configurations files
-.idea
-.vscode
-
-# .env files
-.env
-.env.local
-.env.development
-.env.production
-.env.docker.run
-
-# Local database files
-.db
-.database
-.db.bak
-
-# Local backup files
-go.mod.bak
-
-# Binaries for programs and plugins
+# Binaries / Build outputs
+bin/
+/bin/
+dist/
+out/
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
-/bin
 
-# Test binary, built with `go test -c`
-*.test
+# Environment variables
+.env
 
-# Output of the go coverage tool, specifically when used with LiteIDE
-*.out
-main
-.history/
+# Local Docker volumes and persistent data
+docker/volumes/
+
+# Go workspace files
+*.work
+
+# IDEs and text editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

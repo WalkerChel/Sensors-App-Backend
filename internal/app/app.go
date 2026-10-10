@@ -21,6 +21,9 @@ import (
 )
 
 func Run() {
+
+	log.SetFlags(log.Llongfile)
+
 	cnf, err := configs.New()
 	if err != nil {
 		log.Printf("env config initialization err: %s", err)
@@ -44,6 +47,7 @@ func Run() {
 	redisDB, err := db.NewRedisDB(context.Background(),
 		cnf.Redis.Host,
 		cnf.Redis.Port,
+		cnf.Redis.Username,
 		cnf.Redis.Password,
 		cnf.Redis.DB)
 
