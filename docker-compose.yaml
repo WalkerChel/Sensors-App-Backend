@@ -1,10 +1,11 @@
 name: "sensors-app-backend"
 
 x-common: &common
-  stop_grace_period: 2m
-  restart: "unless-stopped"
+  stop_grace_period: 1m
+  restart: "always"
   env_file:
-    - .env 
+    - .env
+  logging: {driver: "json-file", options: {max-size: "10m", max-file: "3"}}
   networks:
     - sensors-backend-network
 
@@ -21,7 +22,7 @@ services:
     container_name: "sensors-app"
     build:
       context: .
-      no_cache: true
+      no_cache: false
     environment:
       - POSTGRES_HOST=postgres_db
       - REDIS_HOST=redis_db
@@ -35,9 +36,16 @@ services:
         condition: service_healthy
         restart: true
     ports: 
-      - ${HTTP_SERVER_PORT:-8080}:8080
-    volumes:
-      - ${ENV_PATH:-.env}:/build/.env
+      - "127.0.0.1:${HTTP_SERVER_PORT:-8080}:8080"
+    deploy:
+      resources:
+        limits: {cpus: '3.0', memory: 3GiB}
+        reservations: {cpus: '0.5', memory: 512MiB}
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
 
   migrator:
     image: migrate/migrate:v4.20.1
@@ -54,13 +62,14 @@ services:
       --verbose 
       up
     healthcheck:
+      disable: true
       <<: *health-defaults
       test: ["CMD-SHELL", "migrate --version"]
     volumes:
-      - ${MIGRATIONS_PATH:?}:/migrations
+      - ${MIGRATIONS_PATH:?}:/migrations:ro
 
   postgres_db:
-    image: postgres:17.2
+    image: postgres:17.2-alpine
     <<: *common
     container_name: "postgres"
     environment:
@@ -71,12 +80,16 @@ services:
       <<: *health-defaults
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
     volumes:
-      - ${VOLUMES_PATH:?}/postgres/data:/var/lib/postgresql/data
+      - ${VOLUMES_PATH:?}/postgres:/var/lib/postgresql/data
     ports:
-      - ${POSTGRES_PORT:-5432}:5432
+      - 127.0.0.1:${POSTGRES_PORT:-5432}:5432
+    deploy:
+      resources:
+        limits: {cpus: '2.0', memory: 2GiB}
+        reservations: {cpus: '0.5', memory: 512MiB}
   
   redis_db:
-    image: redis:7.4.1
+    image: redis:7.4.1-alpine
     <<: *common
     container_name: "redis"
     environment:
@@ -88,13 +101,18 @@ services:
       --requirepass ${REDIS_PASSWORD}
       --user default off
       --user ${REDIS_USER} on ">"${REDIS_USER_PASSWORD} ~* +@all
+      --dir /data
     healthcheck:
       <<: *health-defaults
       test: ["CMD-SHELL", "redis-cli -e --user \"$REDIS_USER\" --pass \"$REDIS_USER_PASSWORD\" ping"]
     volumes:
-      - ${VOLUMES_PATH:?}/redis/data:/var/lib/redis/data
+      - ${VOLUMES_PATH:?}/redis:/data
     ports:
-      - ${REDIS_PORT:-6379}:6379
+      - 127.0.0.1:${REDIS_PORT:-6379}:6379
+    deploy:
+      resources:
+        limits: {cpus: '1.0', memory: 512MiB}
+        reservations: {cpus: '0.1', memory: 128MiB}
 
 
 networks:

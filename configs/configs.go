@@ -1,7 +1,10 @@
 package configs
 
 import (
+	"errors"
 	"fmt"
+	"log"
+	"os"
 	"sensors-app/internal/entities"
 
 	"github.com/ilyakaznacheev/cleanenv"
@@ -10,7 +13,15 @@ import (
 
 func New() (entities.Config, error) {
 	if err := godotenv.Load(); err != nil {
-		return entities.Config{}, err
+		if pathErr, ok := errors.AsType[*os.PathError](err); ok {
+			if os.IsNotExist(err) {
+				log.Println("Info: No .env file found; relying on system environment variables")
+			} else {
+				log.Printf("Warning: Could not read .env file (%v); falling back to system environment variables", pathErr)
+			}
+		} else {
+			return entities.Config{}, err
+		}
 	}
 
 	cnf := entities.Config{}
