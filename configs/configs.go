@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"sensors-app/internal/entities"
+
+	"github.com/WalkerChel/sensors-api/internal/entities"
 
 	"github.com/ilyakaznacheev/cleanenv"
 	"github.com/joho/godotenv"

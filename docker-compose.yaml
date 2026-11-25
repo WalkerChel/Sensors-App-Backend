@@ -1,4 +1,4 @@
-name: "sensors-app-backend"
+name: "sensors-api"
 
 x-common: &common
   stop_grace_period: 1m
@@ -7,7 +7,7 @@ x-common: &common
     - .env
   logging: {driver: "json-file", options: {max-size: "10m", max-file: "3"}}
   networks:
-    - sensors-backend-network
+    - sensors-api-network
 
 x-health-defaults: &health-defaults
   interval: 10s
@@ -19,7 +19,7 @@ x-health-defaults: &health-defaults
 services:
   app:
     <<: *common
-    container_name: "sensors-app"
+    container_name: "sensors-api"
     build:
       context: .
       no_cache: false
@@ -116,7 +116,7 @@ services:
 
 
 networks:
-  sensors-backend-network:
-    name: "sensors-backend-network"
+  sensors-api-network:
+    name: "sensors-api-network"
     driver: bridge
     external: false

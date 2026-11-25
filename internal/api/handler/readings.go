@@ -8,12 +8,13 @@ import (
 	"log"
 	"math/big"
 	"net/http"
-	apiRequests "sensors-app/internal/api/api-requests"
-	apiResponses "sensors-app/internal/api/api-responses"
-	"sensors-app/internal/api/ports"
-	"sensors-app/internal/entities"
-	"sensors-app/internal/service/serviceErrors"
 	"time"
+
+	apiRequests "github.com/WalkerChel/sensors-api/internal/api/api-requests"
+	apiResponses "github.com/WalkerChel/sensors-api/internal/api/api-responses"
+	"github.com/WalkerChel/sensors-api/internal/api/ports"
+	"github.com/WalkerChel/sensors-api/internal/entities"
+	"github.com/WalkerChel/sensors-api/internal/service/serviceErrors"
 
 	"github.com/gin-gonic/gin"
 )

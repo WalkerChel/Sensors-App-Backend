@@ -2,7 +2,8 @@ package ports
 
 import (
 	"context"
-	"sensors-app/internal/entities"
+
+	"github.com/WalkerChel/sensors-api/internal/entities"
 )
 
 type Authentication interface {

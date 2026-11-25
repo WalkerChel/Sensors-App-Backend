@@ -4,4 +4,4 @@ set -e
 
 
 echo "Starting service"
-exec ./SensorsApp
+exec ./bin/sensors-api

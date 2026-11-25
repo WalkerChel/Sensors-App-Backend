@@ -1,4 +1,4 @@
-module sensors-app
+module github.com/WalkerChel/sensors-api
 
 go 1.26.0
 

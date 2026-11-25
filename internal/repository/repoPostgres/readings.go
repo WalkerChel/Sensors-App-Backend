@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"sensors-app/internal/entities"
-	"sensors-app/internal/repository/repoErrors"
 	"time"
+
+	"github.com/WalkerChel/sensors-api/internal/entities"
+	"github.com/WalkerChel/sensors-api/internal/repository/repoErrors"
 
 	"github.com/jmoiron/sqlx"
 )

@@ -5,8 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"sensors-app/internal/repository/repoErrors"
 	"time"
+
+	"github.com/WalkerChel/sensors-api/internal/repository/repoErrors"
 
 	"github.com/redis/go-redis/v9"
 )

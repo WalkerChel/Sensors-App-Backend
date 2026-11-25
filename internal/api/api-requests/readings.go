@@ -1,7 +1,7 @@
 package apiRequests
 
 import (
-	"sensors-app/internal/entities"
+	"github.com/WalkerChel/sensors-api/internal/entities"
 )
 
 type ReadingsBetweenDates struct {

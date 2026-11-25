@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sensors-app/internal/entities"
-	"sensors-app/internal/repository/repoErrors"
-	"sensors-app/internal/service/serviceErrors"
+
+	"github.com/WalkerChel/sensors-api/internal/entities"
+	"github.com/WalkerChel/sensors-api/internal/repository/repoErrors"
+	"github.com/WalkerChel/sensors-api/internal/service/serviceErrors"
 )
 
 type SensorRepo interface {
@@ -36,7 +37,7 @@ func (s *SensorService) GetSensorsByRegionID(ctx context.Context, regionId int64
 	return sensors, nil
 }
 
-func(s *SensorService) GetPaginatedSensors(ctx context.Context, limit, offset int64) ([]entities.Sensor, error) {
+func (s *SensorService) GetPaginatedSensors(ctx context.Context, limit, offset int64) ([]entities.Sensor, error) {
 	sensors, err := s.sensorRepo.GetPaginatedSensors(ctx, limit, offset)
 	if err != nil {
 		if errors.Is(err, repoErrors.ErrNoRecords) {

@@ -3,9 +3,10 @@ package handler
 import (
 	"fmt"
 	"net/http"
-	"sensors-app/internal/api/middleware"
-	"sensors-app/internal/api/ports"
-	"sensors-app/internal/entities"
+
+	"github.com/WalkerChel/sensors-api/internal/api/middleware"
+	"github.com/WalkerChel/sensors-api/internal/api/ports"
+	"github.com/WalkerChel/sensors-api/internal/entities"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"

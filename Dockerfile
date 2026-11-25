@@ -11,7 +11,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN go build -ldflags="-s -w" -trimpath -o bin/SensorsApp cmd/sensors-app/main.go
+RUN go build -ldflags="-s -w" -trimpath -o bin/sensors-api cmd/sensors-api/main.go
 
 # Run stage
 FROM debian:bookworm-slim
@@ -20,18 +20,18 @@ FROM debian:bookworm-slim
 RUN groupadd -g 1000 appgroup && \
     useradd -u 1000 -g appgroup -s /bin/sh appuser
 
-WORKDIR /build
+WORKDIR /sensors-api
 
-COPY --from=builder /build/bin/SensorsApp .
+COPY --from=builder /build/bin/sensors-api ./bin/
 COPY --from=builder /build/migrations ./migrations
 COPY --from=builder /build/entrypoint.sh .
 
 RUN chmod +x ./entrypoint.sh && \
-    chown -R appuser:appgroup /build
+    chown -R appuser:appgroup /sensors-api
 
 # Switch to non-root user
 USER appuser
 
 EXPOSE 8080 
 
-ENTRYPOINT ["/build/entrypoint.sh"]
+ENTRYPOINT ["./entrypoint.sh"]

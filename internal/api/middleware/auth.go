@@ -4,16 +4,18 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	"sensors-app/internal/api/ports"
-	"sensors-app/internal/entities"
-	"sensors-app/internal/service/serviceErrors"
 	"strings"
+
+	"github.com/WalkerChel/sensors-api/internal/api/ports"
+	"github.com/WalkerChel/sensors-api/internal/entities"
+	"github.com/WalkerChel/sensors-api/internal/service/serviceErrors"
 
 	"github.com/gin-gonic/gin"
 )
 
 const (
 	authHeader = "Authorization"
+	bearerStr  = "bearer"
 	userIDCtx  = "userID"
 )
 
@@ -39,6 +41,14 @@ func AuthMiddleware(env entities.Config, authService ports.Authentication) gin.H
 			})
 			return
 		}
+		if strings.ToLower(bearerToken[0]) != bearerStr {
+			log.Printf("token does not start with (Bearer), uri: %s", uriPath)
+			c.AbortWithStatusJSON(http.StatusNotAcceptable, gin.H{
+				"message": "check token validity",
+			})
+			return
+		}
+
 		token := bearerToken[1]
 
 		userID, err := authService.ParseToken(token, jwtCnf)

@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sensors-app/internal/entities"
-	"sensors-app/internal/repository/repoErrors"
-	"sensors-app/internal/service/serviceErrors"
-	"sensors-app/utils"
+
+	"github.com/WalkerChel/sensors-api/internal/entities"
+	"github.com/WalkerChel/sensors-api/internal/repository/repoErrors"
+	"github.com/WalkerChel/sensors-api/internal/service/serviceErrors"
+	"github.com/WalkerChel/sensors-api/utils"
 )
 
 const (

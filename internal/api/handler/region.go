@@ -5,9 +5,10 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	"sensors-app/internal/api/ports"
-	"sensors-app/internal/entities"
-	"sensors-app/internal/service/serviceErrors"
+
+	"github.com/WalkerChel/sensors-api/internal/api/ports"
+	"github.com/WalkerChel/sensors-api/internal/entities"
+	"github.com/WalkerChel/sensors-api/internal/service/serviceErrors"
 
 	"github.com/gin-gonic/gin"
 )

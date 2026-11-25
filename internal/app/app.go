@@ -5,17 +5,19 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"sensors-app/configs"
-	"sensors-app/db"
 
-	"sensors-app/internal/api/handler"
-	"sensors-app/internal/service"
+	"github.com/WalkerChel/sensors-api/configs"
+	"github.com/WalkerChel/sensors-api/db"
 
-	"sensors-app/internal/repository/repoPostgres"
-	"sensors-app/internal/repository/repoRedis"
+	"github.com/WalkerChel/sensors-api/internal/api/handler"
+	"github.com/WalkerChel/sensors-api/internal/service"
 
-	"sensors-app/server"
+	"github.com/WalkerChel/sensors-api/internal/repository/repoPostgres"
+	"github.com/WalkerChel/sensors-api/internal/repository/repoRedis"
+
 	"syscall"
+
+	"github.com/WalkerChel/sensors-api/server"
 
 	_ "github.com/lib/pq"
 )
